@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"bufio"
-	"compress/gzip"
 	"fmt"
 	"ghproxy/config"
 	"io"
@@ -66,7 +65,7 @@ func modifyURL(url string, host string, cfg *config.Config) string {
 }
 
 // processLinks 处理链接，返回包含处理后数据的 io.Reader
-func processLinks(input io.ReadCloser, compress string, host string, cfg *config.Config, c *touka.Context) (readerOut io.Reader, written int64, err error) {
+func processLinks(input io.ReadCloser, host string, cfg *config.Config, c *touka.Context) (readerOut io.Reader, written int64, err error) {
 	pipeReader, pipeWriter := io.Pipe() // 创建 io.Pipe
 	readerOut = pipeReader
 
@@ -97,43 +96,14 @@ func processLinks(input io.ReadCloser, compress string, host string, cfg *config
 
 		var bufReader *bufio.Reader
 
-		if compress == "gzip" {
-			// 解压gzip
-			gzipReader, gzipErr := gzip.NewReader(input)
-			if gzipErr != nil {
-				err = fmt.Errorf("gzip解压错误: %v", gzipErr)
-				return // Goroutine 中使用 return 返回错误
-			}
-			defer gzipReader.Close()
-			bufReader = bufio.NewReader(gzipReader)
-		} else {
-			bufReader = bufio.NewReader(input)
-		}
+		bufReader = bufio.NewReader(input)
 
 		var bufWriter *bufio.Writer
-		var gzipWriter *gzip.Writer
 
-		// 根据是否gzip确定 writer 的创建
-		if compress == "gzip" {
-			gzipWriter = gzip.NewWriter(pipeWriter)           // 使用 pipeWriter
-			bufWriter = bufio.NewWriterSize(gzipWriter, 4096) //设置缓冲区大小
-		} else {
-			bufWriter = bufio.NewWriterSize(pipeWriter, 4096) // 使用 pipeWriter
-		}
+		bufWriter = bufio.NewWriterSize(pipeWriter, 4096) // 使用 pipeWriter
 
 		//确保writer关闭
 		defer func() {
-			var closeErr error // 局部变量，用于保存defer中可能发生的错误
-
-			if gzipWriter != nil {
-				if closeErr = gzipWriter.Close(); closeErr != nil {
-					c.Errorf("gzipWriter close failed %v", closeErr)
-					// 如果已经存在错误，则保留。否则，记录此错误。
-					if err == nil {
-						err = closeErr
-					}
-				}
-			}
 			if flushErr := bufWriter.Flush(); flushErr != nil {
 				c.Errorf("writer flush failed %v", flushErr)
 				// 如果已经存在错误，则保留。否则，记录此错误。

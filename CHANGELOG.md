@@ -1,5 +1,9 @@
 # 更新日志
 
+4.3.4 - 2025-09-10
+---
+- CHANGE: 改进嵌套加速实现, 增强稳定性
+
 4.3.3 - 2025-09-10
 ---
 - CHANGE: 增强对[wanf](https://github.com/WJQSERVER/wanf)的支持

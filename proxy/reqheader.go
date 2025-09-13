@@ -27,6 +27,7 @@ var (
 		"CDN-Loop":         {},
 		"Upgrade":          {},
 		"Connection":       {},
+		"Accept-Encoding":  {},
 	}
 
 	cloneHeadersToRemove = map[string]struct{}{
@@ -43,7 +44,7 @@ var (
 var (
 	defaultHeaders = map[string]string{
 		"Accept":            "*/*",
-		"Accept-Encoding":   "gzip",
+		"Accept-Encoding":   "",
 		"Transfer-Encoding": "chunked",
 		"User-Agent":        "GHProxy/1.0",
 	}
