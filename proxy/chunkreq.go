@@ -127,18 +127,14 @@ func ChunkedProxyRequest(ctx context.Context, c *touka.Context, u string, cfg *c
 	defer bodyReader.Close()
 
 	if MatcherShell(u) && matchString(matcher) && cfg.Shell.Editor {
-		// 判断body是不是gzip
-		var compress string
-		if resp.Header.Get("Content-Encoding") == "gzip" {
-			compress = "gzip"
-		}
 
 		c.Debugf("Use Shell Editor: %s %s %s %s %s", c.ClientIP(), c.Request.Method, u, c.UserAgent(), c.Request.Proto)
-		c.Header("Content-Length", "")
+		c.DelHeader("Content-Length")
+		c.DelHeader("Content-Encoding")
 
 		var reader io.Reader
 
-		reader, _, err = processLinks(bodyReader, compress, c.Request.Host, cfg, c)
+		reader, _, err = processLinks(bodyReader, c.Request.Host, cfg, c)
 		c.WriteStream(reader)
 		if err != nil {
 			c.Errorf("%s %s %s %s %s Failed to copy response body: %v", c.ClientIP(), c.Request.Method, u, c.UserAgent(), c.Request.Proto, err)
@@ -146,7 +142,6 @@ func ChunkedProxyRequest(ctx context.Context, c *touka.Context, u string, cfg *c
 			return
 		}
 	} else {
-
 		if contentLength != "" {
 			c.SetHeader("Content-Length", contentLength)
 			c.WriteStream(bodyReader)
